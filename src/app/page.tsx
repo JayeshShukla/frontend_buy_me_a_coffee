@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { ethers } from "ethers";
-import internal from "stream";
+import abi from "../utils/BuyMeACoffee.json";
 
 interface errowallet {
   code: number;
@@ -10,10 +10,46 @@ interface errowallet {
 }
 
 export default function Home() {
+  const contractAddress = "0x50d171a56c55277884338bb81436391725fFE566";
+  const contractABI = abi.abi;
+
   const [walletFound, setWalletFound] = useState(false);
   const [walletError, setWalletError] = useState("");
   const [walletAction, setWalletAction] = useState("");
   const [currentAccount, setCurrentAccount] = useState();
+  const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
+
+  const buyCoffee = async () => {
+    try {
+      const { ethereum } = window as any;
+      if (ethereum) {
+        // makes connection with ethereum network through your wallet. To contact with contract for future references.
+        const provider = new ethers.BrowserProvider(ethereum); // passing ethereum as wallet.
+        const signer = await provider.getSigner();
+        const buyMeACoffee = new ethers.Contract(
+          contractAddress,
+          contractABI,
+          signer
+        );
+
+        const coffeeTxn = await buyMeACoffee.buyCoffee(name, message, {
+          value: ethers.parseEther("0.001"),
+        });
+        await coffeeTxn.wait();
+
+        console.log("mined ", coffeeTxn.hash);
+
+        console.log("coffee purchased!");
+
+        // Clear the form fields.
+        setName("");
+        setMessage("");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -34,6 +70,8 @@ export default function Home() {
   const connectWallet = async () => {
     try {
       const { ethereum } = window as any;
+
+      // makes connection with the wallet extension.
       const accounts = await ethereum.request({
         method: "eth_requestAccounts",
       });
@@ -62,7 +100,50 @@ export default function Home() {
           Buy <strong style={{ fontSize: "35px" }}>Jayesh</strong> A Coffee!
         </p>
         {currentAccount ? (
-          <div>Connected!</div>
+          <div>
+            <p style={{ color: "yellow" }}>Name :</p>
+            <input
+              style={{
+                marginTop: "5px",
+                border: "0px",
+                color: "Turquoise",
+                padding: "5px",
+                background: "#2f2f31",
+              }}
+              value={name}
+              onChange={(event) => setName(event?.target.value)}
+            />
+            <p style={{ marginTop: "10px", color: "yellow" }}>
+              Send Jayesh a message :
+            </p>
+            <textarea
+              rows={3}
+              placeholder="Wish us!"
+              required
+              style={{
+                color: "turquoise",
+                marginTop: "5px",
+                paddingLeft: "5px",
+                background: "#2f2f31",
+              }}
+              onChange={(event) => setMessage(event?.target.value)}
+              value={message}
+            />
+            <div style={{ marginTop: "15px" }}>
+              <button
+                style={{
+                  color: "white",
+                  border: "1px solid Turquoise",
+                  borderRadius: "4px",
+                  padding: "10px",
+                }}
+                disabled={name ? (message ? false : true) : true}
+                onClick={() => buyCoffee()}
+              >
+                Send 1 Coffee (0.001ETH)
+              </button>
+            </div>
+          </div>
         ) : (
           walletFound && (
             <button
