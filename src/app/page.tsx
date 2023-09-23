@@ -22,7 +22,7 @@ export default function Home() {
   const [memo, setMemo] = useState<any[]>([]);
   const [loader, setLoader] = useState(false);
 
-  const buyCoffee = async () => {
+  const buyCoffee = async (amount: string) => {
     try {
       const { ethereum } = window as any;
       if (ethereum) {
@@ -36,7 +36,7 @@ export default function Home() {
         );
 
         const coffeeTxn = await buyMeACoffee.buyCoffee(name, message, {
-          value: ethers.parseEther("0.001"),
+          value: ethers.parseEther(amount),
         });
         setLoader(true);
         await coffeeTxn.wait();
@@ -221,11 +221,25 @@ export default function Home() {
                   cursor: "Pointer",
                 }}
                 disabled={name ? (message ? false : true) : true}
-                onClick={() => buyCoffee()}
+                onClick={() => buyCoffee("0.001")}
               >
                 Send 1 Coffee (0.001ETH)
               </button>
             </div>
+            <button
+              style={{
+                color: "white",
+                border: "1px solid Turquoise",
+                borderRadius: "4px",
+                padding: "10px",
+                cursor: "Pointer",
+                marginTop: "15px",
+              }}
+              disabled={name ? (message ? false : true) : true}
+              onClick={() => buyCoffee("0.005")}
+            >
+              Send 1 Large Coffee (0.005ETH)
+            </button>
           </div>
         ) : (
           walletFound && (
