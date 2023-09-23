@@ -19,6 +19,8 @@ export default function Home() {
   const [currentAccount, setCurrentAccount] = useState();
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
+  const [memo, setMemo] = useState<any[]>([]);
+  const [loader, setLoader] = useState(false);
 
   const buyCoffee = async () => {
     try {
@@ -36,7 +38,9 @@ export default function Home() {
         const coffeeTxn = await buyMeACoffee.buyCoffee(name, message, {
           value: ethers.parseEther("0.001"),
         });
+        setLoader(true);
         await coffeeTxn.wait();
+        setLoader(false);
 
         console.log("mined ", coffeeTxn.hash);
 
@@ -45,6 +49,25 @@ export default function Home() {
         // Clear the form fields.
         setName("");
         setMessage("");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getMessages = async () => {
+    try {
+      const { ethereum } = window as any;
+      if (ethereum) {
+        const provider = new ethers.BrowserProvider(ethereum);
+        const signer = await provider.getSigner();
+        const buyMeACoffee = new ethers.Contract(
+          contractAddress,
+          contractABI,
+          signer
+        );
+        const allMessages = await buyMeACoffee.getMemos();
+        setMemo((prevData) => [...prevData, ...allMessages]);
       }
     } catch (error) {
       console.log(error);
@@ -61,6 +84,7 @@ export default function Home() {
       } else {
         setWalletError("");
         setWalletFound(true);
+        getMessages();
       }
     } catch (error) {
       console.log(error);
@@ -96,10 +120,20 @@ export default function Home() {
       }}
     >
       <div style={{ textAlign: "center" }}>
-        <p style={{ color: "Turquoise", fontSize: "30px", marginTop: "100px" }}>
-          Buy <strong style={{ fontSize: "35px" }}>Jayesh</strong> A Coffee!
+        <p
+          style={{
+            color: "white",
+            fontSize: "30px",
+            marginTop: "15px",
+            marginBottom: "40px",
+          }}
+        >
+          buy
+          <strong style={{ color: "turquoise" }}> Jayesh</strong> a coffee!
         </p>
-        {currentAccount ? (
+        {loader ? (
+          <div>sending coffee...</div>
+        ) : currentAccount ? (
           <div>
             <p style={{ color: "yellow" }}>Name :</p>
             <input
@@ -136,6 +170,7 @@ export default function Home() {
                   border: "1px solid Turquoise",
                   borderRadius: "4px",
                   padding: "10px",
+                  cursor: "Pointer",
                 }}
                 disabled={name ? (message ? false : true) : true}
                 onClick={() => buyCoffee()}
@@ -165,6 +200,58 @@ export default function Home() {
           ) : walletAction ? (
             <div>{walletAction}</div>
           ) : null}
+        </div>
+        <div
+          style={{
+            color: "white",
+            marginTop: "30px",
+            fontSize: "30px",
+            padding: "50px",
+          }}
+        >
+          <div
+            style={{
+              background: "#2f2f31",
+              paddingTop: "20px",
+              paddingLeft: "100px",
+              paddingRight: "100px",
+              minHeight: "44vh",
+              borderRadius: "8px",
+            }}
+          >
+            <div>Coffee Lover's Zone</div>
+            <div
+              style={{
+                width: "100%",
+                height: "35vh",
+                fontSize: "20px",
+                justifyContent: "start",
+                display: "block",
+                overflowY: "scroll",
+              }}
+            >
+              {currentAccount &&
+                memo &&
+                memo.map((item, idx) => {
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        border: "2px solid turquoise",
+                        borderRadius: "5px",
+                        padding: "5px",
+                        margin: "10px",
+                      }}
+                    >
+                      <p style={{ fontWeight: "bold" }}>"{item.message}"</p>
+                      <p>
+                        From: {item.name} at {item.timestamp.toString()}
+                      </p>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
         </div>
       </div>
     </div>
