@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { ethers } from "ethers";
+import { ethers, parseEther } from "ethers";
 import abi from "../utils/BuyMeACoffee.json";
 
 interface errowallet {
@@ -10,7 +10,7 @@ interface errowallet {
 }
 
 export default function Home() {
-  const contractAddress = "0x50d171a56c55277884338bb81436391725fFE566";
+  const contractAddress = "0x6bC0b90706dD4D0fc5e09FBD2D9ecC8b7B766323";
   const contractABI = abi.abi;
 
   const [walletFound, setWalletFound] = useState(false);
@@ -22,7 +22,7 @@ export default function Home() {
   const [memo, setMemo] = useState<any[]>([]);
   const [loader, setLoader] = useState(false);
 
-  const buyCoffee = async () => {
+  const buyCoffee = async (amount: string) => {
     try {
       const { ethereum } = window as any;
       if (ethereum) {
@@ -36,7 +36,7 @@ export default function Home() {
         );
 
         const coffeeTxn = await buyMeACoffee.buyCoffee(name, message, {
-          value: ethers.parseEther("0.001"),
+          value: ethers.parseEther(amount),
         });
         setLoader(true);
         await coffeeTxn.wait();
@@ -100,15 +100,17 @@ export default function Home() {
       const onNewMemo = (
         from: any,
         timestamp: number,
+        amount: number,
         name: any,
         message: any
       ) => {
-        console.log("Memo received: ", from, timestamp, name, message);
+        console.log("Memo received: ", from, timestamp, amount, name, message);
         setMemo((prevState: any) => [
           ...prevState,
           {
             address: from,
             timestamp: new Date(Number(timestamp) * 1000), // Explicitly convert timestamp to a number
+            amount,
             message,
             name,
           },
@@ -221,11 +223,25 @@ export default function Home() {
                   cursor: "Pointer",
                 }}
                 disabled={name ? (message ? false : true) : true}
-                onClick={() => buyCoffee()}
+                onClick={() => buyCoffee("0.001")}
               >
                 Send 1 Coffee (0.001ETH)
               </button>
             </div>
+            <button
+              style={{
+                color: "white",
+                border: "1px solid Turquoise",
+                borderRadius: "4px",
+                padding: "10px",
+                cursor: "Pointer",
+                marginTop: "15px",
+              }}
+              disabled={name ? (message ? false : true) : true}
+              onClick={() => buyCoffee("0.005")}
+            >
+              Send 1 Large Coffee (0.005ETH)
+            </button>
           </div>
         ) : (
           walletFound && (
@@ -281,6 +297,13 @@ export default function Home() {
               {currentAccount &&
                 memo &&
                 memo.map((item, idx) => {
+                  const amountInWei = item.amount.toString(); // Convert it to a string
+
+                  // Now, you can use parseEther with the string value
+                  const parsedAmount = ethers.parseEther(amountInWei);
+
+                  // Convert the parsed amount back to a string if needed
+                  const parsedAmountString = parsedAmount.toString();
                   return (
                     <div
                       key={idx}
@@ -291,6 +314,7 @@ export default function Home() {
                         margin: "10px",
                       }}
                     >
+                      <p>{parsedAmountString}</p>
                       <p style={{ fontWeight: "bold" }}>"{item.message}"</p>
                       <p>
                         From: {item.name} at {item.timestamp.toString()}
