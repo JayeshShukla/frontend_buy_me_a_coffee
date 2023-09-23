@@ -58,7 +58,7 @@ export default function Home() {
   const getMessages = async () => {
     try {
       const { ethereum } = window as any;
-      if (ethereum) {
+      if (ethereum && currentAccount) {
         const provider = new ethers.BrowserProvider(ethereum);
         const signer = await provider.getSigner();
         const buyMeACoffee = new ethers.Contract(
@@ -89,7 +89,55 @@ export default function Home() {
     } catch (error) {
       console.log(error);
     }
-  }, []);
+  }, [currentAccount]);
+
+  useEffect(() => {
+    const EventListener = async () => {
+      let buyMeACoffee: ethers.Contract;
+
+      // Create an event handler function for when someone sends
+      // us a new memo.
+      const onNewMemo = (
+        from: any,
+        timestamp: number,
+        name: any,
+        message: any
+      ) => {
+        console.log("Memo received: ", from, timestamp, name, message);
+        setMemo((prevState: any) => [
+          ...prevState,
+          {
+            address: from,
+            timestamp: new Date(Number(timestamp) * 1000), // Explicitly convert timestamp to a number
+            message,
+            name,
+          },
+        ]);
+      };
+
+      const { ethereum } = window as any;
+
+      // Listen for new memo events.
+      if (ethereum && currentAccount) {
+        const provider = new ethers.BrowserProvider(ethereum);
+        const signer = await provider.getSigner();
+        buyMeACoffee = new ethers.Contract(
+          contractAddress,
+          contractABI,
+          signer
+        );
+
+        buyMeACoffee.on("NewMemo", onNewMemo);
+      }
+
+      return () => {
+        if (buyMeACoffee) {
+          buyMeACoffee.off("NewMemo", onNewMemo);
+        }
+      };
+    };
+    EventListener();
+  }, [currentAccount]);
 
   const connectWallet = async () => {
     try {
